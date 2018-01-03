@@ -37,7 +37,6 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 	// internals
 
-	this.target = new THREE.Vector3();
 
 	var EPS = 0.000001;
 
@@ -64,9 +63,9 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 	// for reset
 
-	this.target0 = this.target.clone();
 	this.position0 = this.object.position.clone();
 	this.up0 = this.object.up.clone();
+
 
 	// events
 
@@ -76,6 +75,13 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 
 	// methods
+
+	this.setTarget = function ( target ) {
+		this.target = target;
+		this.target0 = this.target.clone();
+	}
+
+	this.setTarget( new THREE.Vector3() );
 
 	this.handleResize = function () {
 
@@ -152,7 +158,7 @@ THREE.TrackballControls = function ( object, domElement ) {
 				} else {
 
 					mouseOnBall.z = .5 / length;
-					
+
 				}
 
 			} else if ( length > 1.0 ) {
@@ -360,6 +366,35 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 	};
 
+	this.getRaycasterPoint = function(event){
+		var mouse=new THREE.Vector2();//屏幕点击点二维坐标
+	    //将鼠标点击位置的屏幕坐标转成threejs中的标准坐标,具体解释见代码释义
+	    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+	    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+	    //新建一个三维单位向量 假设z方向就是0.5
+	    //根据照相机，把这个向量转换到视点坐标系
+	      var vector = new THREE.Vector3(mouse.x, mouse.y,0.5).unproject(_this.object);
+
+	    //在视点坐标系中形成射线,射线的起点向量是照相机， 射线的方向向量是照相机到点击的点，这个向量应该归一标准化。
+	    var raycaster = new THREE.Raycaster(_this.object.position, vector.sub(_this.object.position).normalize());
+
+	    //射线和模型求交，选中一系列直线
+	    var intersects = raycaster.intersectObjects(objects);
+	    if (intersects.length > 0) {
+	        //选中第一个射线相交的物体
+	        return intersects[0].point;
+	    }
+	    return false;
+	}
+
+	this.setCamera = function ( vrp ) {
+		if(vrp){
+			_this.target.copy( vrp );
+	     	_this.object.lookAt( _this.target );
+			_this.object.position.addVectors( _this.target, _eye.setLength( 10 ) );
+		}
+	}
+
 	// listeners
 
 	function keydown( event ) {
@@ -403,6 +438,7 @@ THREE.TrackballControls = function ( object, domElement ) {
 	function mousedown( event ) {
 
 		if ( _this.enabled === false ) return;
+		_lastTouchDate = new Date().getTime();
 
 		event.preventDefault();
 		event.stopPropagation();
@@ -412,7 +448,6 @@ THREE.TrackballControls = function ( object, domElement ) {
 			_state = event.button;
 
 		}
-
 		if ( _state === STATE.ROTATE && !_this.noRotate ) {
 
 			_rotateStart.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
@@ -443,7 +478,6 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 		event.preventDefault();
 		event.stopPropagation();
-
 		if ( _state === STATE.ROTATE && !_this.noRotate ) {
 
 			_rotateEnd.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
@@ -466,6 +500,12 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 		event.preventDefault();
 		event.stopPropagation();
+		// console.log(_state);
+		if( new Date().getTime() - _lastTouchDate < 200 ){
+			var vrp = _this.getRaycasterPoint(event);
+			_this.setCamera(vrp);
+		}
+
 
 		_state = STATE.NONE;
 
@@ -570,32 +610,33 @@ THREE.TrackballControls = function ( object, domElement ) {
 	function touchend( event ) {
 
 		if ( _this.enabled === false ) return;
-		if( _touchesLength == 1 && new Date().getTime() - _lastTouchDate < 1000 ){
-			console.log("Tap");
-			return;
-		}
+		if( _touchesLength == 1 && new Date().getTime() - _lastTouchDate < 200 ){
+			var vrp = _this.getRaycasterPoint(event);
+			_this.setCamera(vrp);
+		}else{
 
-		switch ( event.touches.length ) {
+			switch ( event.touches.length ) {
 
-			case 1:
-				_touchesLength = 1;
-				_rotateEnd.copy( getMouseProjectionOnBall( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY ) );
-				_rotateStart.copy( _rotateEnd );
-				break;
+				case 1:
+					_touchesLength = 1;
+					_rotateEnd.copy( getMouseProjectionOnBall( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY ) );
+					_rotateStart.copy( _rotateEnd );
+					break;
 
-			case 2:
-				_touchesLength = 2;
-				_touchZoomDistanceStart = _touchZoomDistanceEnd = 0;
+				case 2:
+					_touchesLength = 2;
+					_touchZoomDistanceStart = _touchZoomDistanceEnd = 0;
 
-				var x = ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX ) / 2;
-				var y = ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY ) / 2;
-				_panEnd.copy( getMouseOnScreen( x, y ) );
-				_panStart.copy( _panEnd );
-				break;
-			default:
-				_touchesLength = 0;
-				break;
+					var x = ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX ) / 2;
+					var y = ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY ) / 2;
+					_panEnd.copy( getMouseOnScreen( x, y ) );
+					_panStart.copy( _panEnd );
+					break;
+				default:
+					_touchesLength = 0;
+					break;
 
+			}
 		}
 
 		_state = STATE.NONE;

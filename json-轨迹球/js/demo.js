@@ -1,5 +1,6 @@
 ﻿if (!Detector.webgl) Detector.addGetWebGLMessage();
 var container;
+var objects = [];
 var camera, controls, scene, renderer;
 // var wireMaterial,
 //     flatMaterial,
@@ -21,7 +22,8 @@ function addControls( camera, target ){
     ctrl.dynamicDampingFactor = 0.2;
 
     camera.lookAt(target);
-    ctrl.target = target;
+    // ctrl.target = target;
+    ctrl.setTarget( target );
     return ctrl;
 }
 function addLight(){
@@ -65,6 +67,7 @@ function loadModels( filePath, material ){
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         scene.add(mesh);
+        objects.push(mesh);
     })
 }
 
@@ -93,7 +96,7 @@ function init() {
 
     // 加载模型
     loadModels( 'obj/body.json', material );
-    // loadModels( 'obj/eyes.json', material );
+    loadModels( 'obj/eyes.json', material );
 
     // 渲染
     renderer = new THREE.WebGLRenderer({
