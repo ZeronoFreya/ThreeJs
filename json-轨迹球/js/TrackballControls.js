@@ -4,7 +4,7 @@
  */
 
 THREE.TrackballControls = function ( object, domElement ) {
-	var status = document.getElementById('status');
+	// var status = document.getElementById('status');
 	var _this = this;
 	var STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM_PAN: 4 };
 
@@ -46,6 +46,7 @@ THREE.TrackballControls = function ( object, domElement ) {
 	var _state = STATE.NONE,
 	_prevState = STATE.NONE,
 	_touchesLength = 0,
+	_lastTouchDate = 0,
 
 	_eye = new THREE.Vector3(),
 
@@ -500,7 +501,9 @@ THREE.TrackballControls = function ( object, domElement ) {
 	}
 
 	function touchstart( event ) {
-
+		event.preventDefault();
+		event.stopPropagation();
+		_lastTouchDate = new Date().getTime();
 		if ( _this.enabled === false ) return;
 		switch ( event.touches.length ) {
 			case 1:
@@ -567,7 +570,11 @@ THREE.TrackballControls = function ( object, domElement ) {
 	function touchend( event ) {
 
 		if ( _this.enabled === false ) return;
-		_touchesLength = 0;
+		if( _touchesLength == 1 && new Date().getTime() - _lastTouchDate < 1000 ){
+			console.log("Tap");
+			return;
+		}
+
 		switch ( event.touches.length ) {
 
 			case 1:
@@ -584,6 +591,9 @@ THREE.TrackballControls = function ( object, domElement ) {
 				var y = ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY ) / 2;
 				_panEnd.copy( getMouseOnScreen( x, y ) );
 				_panStart.copy( _panEnd );
+				break;
+			default:
+				_touchesLength = 0;
 				break;
 
 		}

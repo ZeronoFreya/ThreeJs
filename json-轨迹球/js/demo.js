@@ -93,7 +93,7 @@ function init() {
 
     // 加载模型
     loadModels( 'obj/body.json', material );
-    loadModels( 'obj/eyes.json', material );
+    // loadModels( 'obj/eyes.json', material );
 
     // 渲染
     renderer = new THREE.WebGLRenderer({
