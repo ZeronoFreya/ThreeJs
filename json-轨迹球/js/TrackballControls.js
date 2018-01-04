@@ -35,8 +35,8 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 	this.keys = [ 65 /*A*/, 83 /*S*/, 68 /*D*/ ];
 
-	// internals
 
+	// internals
 
 	var EPS = 0.000001;
 
@@ -367,17 +367,17 @@ THREE.TrackballControls = function ( object, domElement ) {
 	};
 
 	this.getRaycasterPoint = function(event){
-		var mouse=new THREE.Vector2();//屏幕点击点二维坐标
-	    //将鼠标点击位置的屏幕坐标转成threejs中的标准坐标,具体解释见代码释义
-	    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-	    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+		var touches = event.changedTouches;
+		var x = touches ? touches[0].pageX : event.clientX ,
+			y = touches ? touches[0].pageY : event.clientY ;
+        var mouse = new THREE.Vector2();
+	        mouse.x = ( x / window.innerWidth ) * 2 - 1;
+	        mouse.y = - ( y / window.innerHeight ) * 2 + 1;
 	    //新建一个三维单位向量 假设z方向就是0.5
 	    //根据照相机，把这个向量转换到视点坐标系
-	      var vector = new THREE.Vector3(mouse.x, mouse.y,0.5).unproject(_this.object);
-
+	    var vector = new THREE.Vector3(mouse.x, mouse.y,0.5).unproject(_this.object);
 	    //在视点坐标系中形成射线,射线的起点向量是照相机， 射线的方向向量是照相机到点击的点，这个向量应该归一标准化。
 	    var raycaster = new THREE.Raycaster(_this.object.position, vector.sub(_this.object.position).normalize());
-
 	    //射线和模型求交，选中一系列直线
 	    var intersects = raycaster.intersectObjects(objects);
 	    if (intersects.length > 0) {
