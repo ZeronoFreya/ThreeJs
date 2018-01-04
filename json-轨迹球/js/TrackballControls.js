@@ -41,6 +41,7 @@ THREE.TrackballControls = function ( object, domElement ) {
 	var EPS = 0.000001;
 
 	var lastPosition = new THREE.Vector3();
+	var lastTouch = new THREE.Vector2();
 
 	var _state = STATE.NONE,
 	_prevState = STATE.NONE,
@@ -539,16 +540,25 @@ THREE.TrackballControls = function ( object, domElement ) {
 		_this.dispatchEvent( endEvent );
 
 	}
-
+	var now, delta;
+	var touch = {};
 	function touchstart( event ) {
 		event.preventDefault();
 		event.stopPropagation();
-		_lastTouchDate = new Date().getTime();
 		if ( _this.enabled === false ) return;
+		now = Date.now();
+		delta = now - (touch.last || now);
+		touch.x1 = event.touches[0].pageX;
+		touch.y1 = event.touches[0].pageY;
+		if (delta > 0 && delta <= 250) touch.isDoubleTap = true;
+		touch.last = now;
+		_lastTouchDate = new Date().getTime();
 		switch ( event.touches.length ) {
 			case 1:
 				_touchesLength = 1;
 				_state = STATE.TOUCH_ROTATE;
+				// lastTouch.x = event.changedTouches[0].pageX;
+				// lastTouch.y = event.changedTouches[0].pageY;
 				_rotateStart.copy( getMouseProjectionOnBall( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY ) );
 				_rotateEnd.copy( _rotateStart );
 				break;
@@ -582,8 +592,14 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 		event.preventDefault();
 		event.stopPropagation();
+		// cancelLongTap();
+		touch.x2 = event.touches[0].pageX;
+		touch.y2 = event.touches[0].pageY;
+		if (event.touches.length > 1 || Math.abs(touch.x1 - touch.x2) > 10)
+			touch = {};
 		switch ( event.touches.length ) {
 			case 1:
+				lastTouch = Math.abs( event.touches[0].pageX - lastTouch ) < 10 ? lastTouch : 0;
 				if( _touchesLength == 1 )
 					_rotateEnd.copy( getMouseProjectionOnBall( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY ) );
 				break;
@@ -610,9 +626,10 @@ THREE.TrackballControls = function ( object, domElement ) {
 	function touchend( event ) {
 
 		if ( _this.enabled === false ) return;
-		if( _touchesLength == 1 && new Date().getTime() - _lastTouchDate < 200 ){
+		if(_touchesLength == 1 && touch.isDoubleTap){
 			var vrp = _this.getRaycasterPoint(event);
 			_this.setCamera(vrp);
+			touch = {};
 		}else{
 
 			switch ( event.touches.length ) {
@@ -638,7 +655,6 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 			}
 		}
-
 		_state = STATE.NONE;
 		_this.dispatchEvent( endEvent );
 
