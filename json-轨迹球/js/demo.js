@@ -11,7 +11,8 @@ init();
 animate();
 
 function addControls( camera, target ){
-    var ctrl = new THREE.TrackballControls(camera);
+    var te = new TouchEvent( container );
+    var ctrl = new THREE.TrackballControls(camera,te);
     // var ctrl = new THREE.OrthographicTrackballControls(camera);
     ctrl.rotateSpeed = 1.0;
     ctrl.zoomSpeed = 1.2;

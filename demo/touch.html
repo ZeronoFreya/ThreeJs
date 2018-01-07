@@ -51,5 +51,26 @@
     <div id="console"></div>
 </div>
 </body>
-<script type="text/javascript" src="touch.js"></script>
+<!-- <script type="text/javascript" src="touch.js"></script> -->
+<script type="text/javascript" src="console.js"></script>
+<script type="text/javascript" src="touch2.js"></script>
+<script type="text/javascript">
+    var log = new Console(document.getElementById('console'));
+    var te = new TouchEvent(document.getElementById('viewport'));
+    te.singleTap = function() {
+        log("singleTap");
+    }
+    te.doubleTap = function() {
+        log("doubleTap");
+    }
+    te.longTap = function() {
+        log("longTap");
+    }
+    te.singleMove = function() {
+        log("singleMove");
+    }
+    te.doubleMove = function() {
+        log("doubleMove");
+    }
+</script>
 </html>
