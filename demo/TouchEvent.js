@@ -1,3 +1,5 @@
+// https://developer.mozilla.org/zh-CN/docs/Web/Events/mousemove
+
 // THREE.TouchEvent = function(object) {
 var TouchEvent = function(object) {
     this.object = object;
@@ -5,26 +7,35 @@ var TouchEvent = function(object) {
     var STATE = {
         NONE: -1,
         TAP: 0,
-        DTAP: 1
+        DTAP: 1,
+        TOUCH_BTN: -1,
+        LEFT_BTN: 0,
+        MIDDLE_BTN: 1,
+        RIGHT_BTN: 2
     };
     var _state = STATE.NONE;
     var tapTime, _lastTapTime, delta;
     var tapTimeout, touchTimeout, longTapTimeout;
     var longTapDelay = 750;
-
-    this.singleTap = function() {
+    this.start = function(e, _s, S) {
+        console.log("start");
+    }
+    this.end = function(e) {
+        console.log("end");
+    }
+    this.singleTap = function(e) {
         console.log("singleTap");
     }
-    this.doubleTap = function() {
+    this.doubleTap = function(e) {
         console.log("doubleTap");
     }
     this.longTap = function() {
         console.log("longTap");
     }
-    this.singleMove = function() {
+    this.singleMove = function(e) {
         console.log("singleMove");
     }
-    this.doubleMove = function() {
+    this.doubleMove = function(e1,e2) {
         console.log("doubleMove");
     }
 
@@ -52,47 +63,54 @@ var TouchEvent = function(object) {
         _lastTapTime = touchTimeout = tapTimeout = longTapTimeout = null;
     }
 
-    function startEvent() {
-        longTapTimeout = setTimeout(longTap, longTapDelay);
+    function startEvent(e,eb) {
         tapTime = Date.now();
         delta = tapTime - (_lastTapTime || tapTime);
         _state = STATE.TAP;
         if (delta > 0 && delta <= 250) {
             _state = STATE.DTAP;
             clearTimeout(touchTimeout);
+        }else{
+            longTapTimeout = setTimeout(longTap, longTapDelay);
         }
         _lastTapTime = tapTime;
+        _this.start(e, eb, _state, STATE);
     }
 
-    function moveEvent(e) {
+    function moveEvent(e, eb) {
+        // if(Math.abs( e.pageX - lastMove ) < 10) return;
         if (_state === STATE.TAP) {
             cancelAll();
-            _this.singleMove();
+            _this.singleMove(e, eb);
         }
     }
 
-    function endEvent() {
+    function endEvent(e, eb) {
         cancelLongTap();
         if (_lastTapTime) {
-            tapTimeout = setTimeout(function() {
+            // tapTimeout = setTimeout(function() {
                 if (_state === STATE.DTAP) {
-                    cancelAll();
-                    _this.doubleTap();
+                    // cancelAll();
+                    clearTimeout(touchTimeout);
+                    _lastTapTime = null;
+                    _this.doubleTap(e, eb);
                 } else if (_state === STATE.TAP) {
                     touchTimeout = setTimeout(function() {
                         _lastTapTime = touchTimeout = null;
-                        _this.singleTap();
+                        _this.singleTap(e, eb);
                     }, 250)
                 }
                 _state = STATE.NONE;
-            }, 0)
+            // }, 0)
         }
+        _this.end(e, eb, _state, STATE);
     }
 
     function mousedown(event) {
         event.preventDefault();
         event.stopPropagation();
-        startEvent();
+        // console.log("s",event.buttons);
+        startEvent(event, event.buttons);
         document.addEventListener('mousemove', mousemove, false);
         document.addEventListener('mouseup', mouseup, false);
     }
@@ -100,13 +118,14 @@ var TouchEvent = function(object) {
     function mousemove(event) {
         event.preventDefault();
         event.stopPropagation();
-        moveEvent(event);
+        // console.log("s",event.buttons);
+        moveEvent(event, event.buttons);
     }
 
     function mouseup(event) {
         event.preventDefault();
         event.stopPropagation();
-        endEvent();
+        endEvent(event, event.buttons);
         document.removeEventListener('mousemove', mousemove);
         document.removeEventListener('mouseup', mouseup);
     }
@@ -116,7 +135,7 @@ var TouchEvent = function(object) {
         event.stopPropagation();
         switch (event.touches.length) {
             case 1:
-                startEvent();
+                startEvent(event.touches[0], STATE.TOUCH_BTN);
                 break;
             case 2:
                 cancelAll();
@@ -132,10 +151,10 @@ var TouchEvent = function(object) {
         if (_state === STATE.NONE) return;
         switch (event.touches.length) {
             case 1:
-                moveEvent(event.touches);
+                moveEvent(event.touches[0], STATE.TOUCH_BTN);
                 break;
             case 2:
-                _this.doubleMove();
+                _this.doubleMove(event.touches[0], event.touches[1]);
                 break;
             default:
                 break;
@@ -147,7 +166,7 @@ var TouchEvent = function(object) {
         event.stopPropagation();
         switch (event.touches.length) {
             case 0:
-                endEvent();
+                endEvent(event.changedTouches[0], STATE.TOUCH_BTN);
                 break;
             case 1:
                 _state = STATE.NONE;

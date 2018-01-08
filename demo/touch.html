@@ -53,24 +53,121 @@
 </body>
 <!-- <script type="text/javascript" src="touch.js"></script> -->
 <script type="text/javascript" src="console.js"></script>
-<script type="text/javascript" src="touch2.js"></script>
+<script type="text/javascript" src="TouchEvent.js"></script>
 <script type="text/javascript">
     var log = new Console(document.getElementById('console'));
     var te = new TouchEvent(document.getElementById('viewport'));
-    te.singleTap = function() {
-        log("singleTap");
+    te.singleTap = function(e, eb) {
+        switch(eb){
+            case -1:
+            case 1:
+            log("L singleTap");
+            break;
+            case 4:
+            log("M singleTap");
+            break;
+            case 2:
+            log("R singleTap");
+            break;
+            default:
+            break;
+        }
     }
-    te.doubleTap = function() {
-        log("doubleTap");
+    te.doubleTap = function(e, eb) {
+        switch(eb){
+            case -1:
+            case 1:
+            log("L doubleTap");
+            break;
+            case 4:
+            log("M doubleTap");
+            break;
+            case 2:
+            log("R doubleTap");
+            break;
+            default:
+            break;
+        }
     }
-    te.longTap = function() {
-        log("longTap");
+    te.longTap = function(e, eb) {
+        switch(eb){
+            case -1:
+            case 1:
+            log("L longTap");
+            break;
+            case 4:
+            log("M longTap");
+            break;
+            case 2:
+            log("R longTap");
+            break;
+            default:
+            break;
+        }
     }
-    te.singleMove = function() {
-        log("singleMove");
+    te.singleMove = function(e, eb) {
+        switch(eb){
+            case -1:
+            case 1:
+            log("L singleMove");
+            break;
+            case 4:
+            log("M singleMove");
+            break;
+            case 2:
+            log("R singleMove");
+            break;
+            default:
+            break;
+        }
     }
-    te.doubleMove = function() {
-        log("doubleMove");
+    te.doubleMove = function(e, eb) {
+        switch(eb){
+            case -1:
+            case 1:
+            log("L doubleMove");
+            break;
+            case 4:
+            log("M doubleMove");
+            break;
+            case 2:
+            log("R doubleMove");
+            break;
+            default:
+            break;
+        }
+    }
+    te.start = function(e, eb,a,b){
+        switch(eb){
+            case -1:
+            case 1:
+            log("L start");
+            break;
+            case 4:
+            log("M start");
+            break;
+            case 2:
+            log("R start");
+            break;
+            default:
+            break;
+        }
+    }
+    te.end = function(e, eb,a,b){
+        switch(eb){
+            case -1:
+            case 0:
+            log("L end");
+            break;
+            case 4:
+            log("M end");
+            break;
+            case 2:
+            log("R end");
+            break;
+            default:
+            break;
+        }
     }
 </script>
 </html>
