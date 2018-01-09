@@ -1,5 +1,4 @@
 // https://developer.mozilla.org/zh-CN/docs/Web/Events/mousemove
-
 // THREE.TouchEvent = function(object) {
 var TouchEvent = function(object) {
     this.object = object;
@@ -13,6 +12,7 @@ var TouchEvent = function(object) {
         MIDDLE_BTN: 1,
         RIGHT_BTN: 2
     };
+    var _lastButtons = null;
     var _state = STATE.NONE;
     var tapTime, _lastTapTime, delta;
     var tapTimeout, touchTimeout, longTapTimeout;
@@ -22,6 +22,9 @@ var TouchEvent = function(object) {
     }
     this.end = function(e) {
         console.log("end");
+    }
+    this.wheel = function(e, d) {
+        console.log("wheel",e.pageX, e.pageY, d);
     }
     this.singleTap = function(e) {
         console.log("singleTap");
@@ -35,14 +38,14 @@ var TouchEvent = function(object) {
     this.singleMove = function(e) {
         console.log("singleMove");
     }
-    this.doubleMove = function(e1,e2) {
+    this.doubleMove = function(e1, e2) {
         console.log("doubleMove");
     }
 
     function longTap() {
         longTapTimeout = null;
         if (_state === STATE.TAP) {
-            _this.longTap();
+            _this.longTap(_lastButtons);
         }
         _state = STATE.NONE;
         _lastTapTime = null;
@@ -63,14 +66,14 @@ var TouchEvent = function(object) {
         _lastTapTime = touchTimeout = tapTimeout = longTapTimeout = null;
     }
 
-    function startEvent(e,eb) {
+    function startEvent(e, eb) {
         tapTime = Date.now();
         delta = tapTime - (_lastTapTime || tapTime);
         _state = STATE.TAP;
         if (delta > 0 && delta <= 250) {
             _state = STATE.DTAP;
             clearTimeout(touchTimeout);
-        }else{
+        } else {
             longTapTimeout = setTimeout(longTap, longTapDelay);
         }
         _lastTapTime = tapTime;
@@ -89,18 +92,18 @@ var TouchEvent = function(object) {
         cancelLongTap();
         if (_lastTapTime) {
             // tapTimeout = setTimeout(function() {
-                if (_state === STATE.DTAP) {
-                    // cancelAll();
-                    clearTimeout(touchTimeout);
-                    _lastTapTime = null;
-                    _this.doubleTap(e, eb);
-                } else if (_state === STATE.TAP) {
-                    touchTimeout = setTimeout(function() {
-                        _lastTapTime = touchTimeout = null;
-                        _this.singleTap(e, eb);
-                    }, 250)
-                }
-                _state = STATE.NONE;
+            if (_state === STATE.DTAP) {
+                // cancelAll();
+                clearTimeout(touchTimeout);
+                _lastTapTime = null;
+                _this.doubleTap(e, eb);
+            } else if (_state === STATE.TAP) {
+                touchTimeout = setTimeout(function() {
+                    _lastTapTime = touchTimeout = null;
+                    _this.singleTap(e, eb);
+                }, 250)
+            }
+            _state = STATE.NONE;
             // }, 0)
         }
         _this.end(e, eb, _state, STATE);
@@ -110,7 +113,8 @@ var TouchEvent = function(object) {
         event.preventDefault();
         event.stopPropagation();
         // console.log("s",event.buttons);
-        startEvent(event, event.buttons);
+        _lastButtons = event.buttons;
+        startEvent(event, _lastButtons);
         document.addEventListener('mousemove', mousemove, false);
         document.addEventListener('mouseup', mouseup, false);
     }
@@ -119,15 +123,32 @@ var TouchEvent = function(object) {
         event.preventDefault();
         event.stopPropagation();
         // console.log("s",event.buttons);
-        moveEvent(event, event.buttons);
+        moveEvent(event, _lastButtons);
     }
 
     function mouseup(event) {
         event.preventDefault();
         event.stopPropagation();
-        endEvent(event, event.buttons);
+        // _lastButtons = event.buttons;
+        endEvent(event, _lastButtons);
         document.removeEventListener('mousemove', mousemove);
         document.removeEventListener('mouseup', mouseup);
+    }
+
+    function mousewheel(event) {
+        // if (_this.enabled === false) return;
+        event.preventDefault();
+        event.stopPropagation();
+        var delta = 0;
+        if (event.wheelDelta) { // WebKit / Opera / Explorer 9
+            delta = event.wheelDelta / 40;
+        } else if (event.detail) { // Firefox
+            delta = -event.detail;
+        }
+        _this.wheel(event, delta);
+        // _zoomStart.y += delta * 0.01;
+        // _this.dispatchEvent(startEvent);
+        // _this.dispatchEvent(endEvent);
     }
 
     function touchstart(event) {
@@ -175,7 +196,11 @@ var TouchEvent = function(object) {
                 _state = STATE.NONE;
         }
     }
-    this.object.addEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
+    this.object.addEventListener('contextmenu', function(event) {
+        event.preventDefault();
+    }, false);
+    this.object.addEventListener('mousewheel', mousewheel, false);
+    this.object.addEventListener('DOMMouseScroll', mousewheel, false); // firefox
     this.object.addEventListener('mousedown', mousedown, false);
     this.object.addEventListener('touchstart', touchstart, false);
     this.object.addEventListener('touchend', touchend, false);

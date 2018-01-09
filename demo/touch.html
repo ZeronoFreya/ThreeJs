@@ -89,7 +89,7 @@
             break;
         }
     }
-    te.longTap = function(e, eb) {
+    te.longTap = function(eb) {
         switch(eb){
             case -1:
             case 1:
@@ -156,7 +156,7 @@
     te.end = function(e, eb,a,b){
         switch(eb){
             case -1:
-            case 0:
+            case 1:
             log("L end");
             break;
             case 4:

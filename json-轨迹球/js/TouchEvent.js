@@ -1,3 +1,4 @@
+// https://developer.mozilla.org/zh-CN/docs/Web/Events/mousemove
 // THREE.TouchEvent = function(object) {
 var TouchEvent = function(object) {
     this.object = object;
@@ -5,8 +6,13 @@ var TouchEvent = function(object) {
     var STATE = {
         NONE: -1,
         TAP: 0,
-        DTAP: 1
+        DTAP: 1,
+        TOUCH_BTN: -1,
+        LEFT_BTN: 0,
+        MIDDLE_BTN: 1,
+        RIGHT_BTN: 2
     };
+    var _lastButtons = null;
     var _state = STATE.NONE;
     var tapTime, _lastTapTime, delta;
     var tapTimeout, touchTimeout, longTapTimeout;
@@ -16,6 +22,9 @@ var TouchEvent = function(object) {
     }
     this.end = function(e) {
         console.log("end");
+    }
+    this.wheel = function(e, d) {
+        console.log("wheel",e.pageX, e.pageY, d);
     }
     this.singleTap = function(e) {
         console.log("singleTap");
@@ -29,14 +38,14 @@ var TouchEvent = function(object) {
     this.singleMove = function(e) {
         console.log("singleMove");
     }
-    this.doubleMove = function(e1,e2) {
+    this.doubleMove = function(e1, e2) {
         console.log("doubleMove");
     }
 
     function longTap() {
         longTapTimeout = null;
         if (_state === STATE.TAP) {
-            _this.longTap();
+            _this.longTap(_lastButtons);
         }
         _state = STATE.NONE;
         _lastTapTime = null;
@@ -57,49 +66,55 @@ var TouchEvent = function(object) {
         _lastTapTime = touchTimeout = tapTimeout = longTapTimeout = null;
     }
 
-    function startEvent(e) {
-        longTapTimeout = setTimeout(longTap, longTapDelay);
+    function startEvent(e, eb) {
         tapTime = Date.now();
         delta = tapTime - (_lastTapTime || tapTime);
         _state = STATE.TAP;
         if (delta > 0 && delta <= 250) {
             _state = STATE.DTAP;
             clearTimeout(touchTimeout);
+        } else {
+            longTapTimeout = setTimeout(longTap, longTapDelay);
         }
         _lastTapTime = tapTime;
-        _this.start(e, _state, STATE);
+        _this.start(e, eb, _state, STATE);
     }
 
-    function moveEvent(e) {
+    function moveEvent(e, eb) {
+        // if(Math.abs( e.pageX - lastMove ) < 10) return;
         if (_state === STATE.TAP) {
             cancelAll();
-            _this.singleMove(e);
+            _this.singleMove(e, eb);
         }
     }
 
-    function endEvent(e) {
+    function endEvent(e, eb) {
         cancelLongTap();
         if (_lastTapTime) {
-            tapTimeout = setTimeout(function() {
-                if (_state === STATE.DTAP) {
-                    cancelAll();
-                    _this.doubleTap(e);
-                } else if (_state === STATE.TAP) {
-                    touchTimeout = setTimeout(function() {
-                        _lastTapTime = touchTimeout = null;
-                        _this.singleTap(e);
-                    }, 250)
-                }
-                _state = STATE.NONE;
-            }, 0)
-            _this.end(e);
+            // tapTimeout = setTimeout(function() {
+            if (_state === STATE.DTAP) {
+                // cancelAll();
+                clearTimeout(touchTimeout);
+                _lastTapTime = null;
+                _this.doubleTap(e, eb);
+            } else if (_state === STATE.TAP) {
+                touchTimeout = setTimeout(function() {
+                    _lastTapTime = touchTimeout = null;
+                    _this.singleTap(e, eb);
+                }, 250)
+            }
+            _state = STATE.NONE;
+            // }, 0)
         }
+        _this.end(e, eb, _state, STATE);
     }
 
     function mousedown(event) {
         event.preventDefault();
         event.stopPropagation();
-        startEvent(event);
+        // console.log("s",event.buttons);
+        _lastButtons = event.buttons;
+        startEvent(event, _lastButtons);
         document.addEventListener('mousemove', mousemove, false);
         document.addEventListener('mouseup', mouseup, false);
     }
@@ -107,15 +122,33 @@ var TouchEvent = function(object) {
     function mousemove(event) {
         event.preventDefault();
         event.stopPropagation();
-        moveEvent(event);
+        // console.log("s",event.buttons);
+        moveEvent(event, _lastButtons);
     }
 
     function mouseup(event) {
         event.preventDefault();
         event.stopPropagation();
-        endEvent(event);
+        // _lastButtons = event.buttons;
+        endEvent(event, _lastButtons);
         document.removeEventListener('mousemove', mousemove);
         document.removeEventListener('mouseup', mouseup);
+    }
+
+    function mousewheel(event) {
+        // if (_this.enabled === false) return;
+        event.preventDefault();
+        event.stopPropagation();
+        var delta = 0;
+        if (event.wheelDelta) { // WebKit / Opera / Explorer 9
+            delta = event.wheelDelta / 40;
+        } else if (event.detail) { // Firefox
+            delta = -event.detail;
+        }
+        _this.wheel(event, delta);
+        // _zoomStart.y += delta * 0.01;
+        // _this.dispatchEvent(startEvent);
+        // _this.dispatchEvent(endEvent);
     }
 
     function touchstart(event) {
@@ -123,7 +156,7 @@ var TouchEvent = function(object) {
         event.stopPropagation();
         switch (event.touches.length) {
             case 1:
-                startEvent(event.touches[0]);
+                startEvent(event.touches[0], STATE.TOUCH_BTN);
                 break;
             case 2:
                 cancelAll();
@@ -139,7 +172,7 @@ var TouchEvent = function(object) {
         if (_state === STATE.NONE) return;
         switch (event.touches.length) {
             case 1:
-                moveEvent(event.touches[0]);
+                moveEvent(event.touches[0], STATE.TOUCH_BTN);
                 break;
             case 2:
                 _this.doubleMove(event.touches[0], event.touches[1]);
@@ -154,7 +187,7 @@ var TouchEvent = function(object) {
         event.stopPropagation();
         switch (event.touches.length) {
             case 0:
-                endEvent(event.changedTouches[0]);
+                endEvent(event.changedTouches[0], STATE.TOUCH_BTN);
                 break;
             case 1:
                 _state = STATE.NONE;
@@ -163,6 +196,11 @@ var TouchEvent = function(object) {
                 _state = STATE.NONE;
         }
     }
+    this.object.addEventListener('contextmenu', function(event) {
+        event.preventDefault();
+    }, false);
+    this.object.addEventListener('mousewheel', mousewheel, false);
+    this.object.addEventListener('DOMMouseScroll', mousewheel, false); // firefox
     this.object.addEventListener('mousedown', mousedown, false);
     this.object.addEventListener('touchstart', touchstart, false);
     this.object.addEventListener('touchend', touchend, false);

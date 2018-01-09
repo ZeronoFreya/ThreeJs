@@ -437,8 +437,35 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 		window.addEventListener( 'keydown', keydown, false );
 
 	}
-	touchEvent.start = function (event, state, _s) {
-		if(state != _s.TAP) return;
+
+	touchEvent.start = function (event, eb,a,b) {
+		switch(eb){
+            case -1:
+            case 1:
+            	// log("L start");
+            	if(!_this.noRotate){
+            		_rotateStart.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
+				_rotateEnd.copy( _rotateStart );
+            	}
+            break;
+            case 4:
+            // log("M start");
+            	if (!_this.noZoom) {
+            		_zoomStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
+				_zoomEnd.copy(_zoomStart);
+            	}
+            break;
+            case 2:
+            // log("R start");
+            if (!_this.noPan) {
+            		_panStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
+				_panEnd.copy(_panStart)
+            	}
+            break;
+            default:
+            break;
+        }
+        /*
 		if (event.button === undefined) {
 			_rotateStart.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
 			_rotateEnd.copy( _rotateStart );
@@ -465,7 +492,7 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 
 			}
 		}
-		
+		*/
 		_this.dispatchEvent( startEvent );
 	}
 	/*
@@ -506,7 +533,31 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 
 	}
 */
-	touchEvent.singleMove = function (event) {
+	touchEvent.singleMove = function (event, eb) {
+		switch(eb){
+            case -1:
+            case 1:
+            // log("L singleMove");
+            	if(!_this.noRotate){
+            		_rotateEnd.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
+            	}
+            break;
+            case 4:
+            // log("M singleMove");
+            	if(!_this.noZoom){
+            		_zoomEnd.copy( getMouseOnScreen( event.pageX, event.pageY ) );
+            	}
+            break;
+            case 2:
+            // log("R singleMove");
+            	if(!_this.noPan){
+            		_panEnd.copy( getMouseOnScreen( event.pageX, event.pageY ) );
+            	}
+            break;
+            default:
+            break;
+        }
+        /*
 		if (event.button === undefined){
 			_rotateEnd.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
 		}else{
@@ -524,7 +575,7 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 
 			}
 		}
-		
+		*/
 	}
 	/*
 	function mousemove( event ) {
@@ -562,9 +613,15 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 		_state = STATE.NONE;
 		_this.dispatchEvent( endEvent );
 	}
-	touchEvent.doubleTap = function(event) {
-        var vrp = _this.getRaycasterPoint(event);
-		_this.setCamera(vrp, 20);
+	touchEvent.doubleTap = function(event, eb) {
+		switch(eb){
+            case -1:
+            case 1:
+            // log("L doubleTap");
+            	var vrp = _this.getRaycasterPoint(event);
+			_this.setCamera(vrp, 20);
+            break;
+        }
     }
     /*
 	function mouseup( event ) {
@@ -588,7 +645,12 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 
 	}
 	*/
-
+	touchEvent.wheel = function (event, delta) {
+		_zoomStart.y += delta * 0.01;
+		_this.dispatchEvent( startEvent );
+		_this.dispatchEvent( endEvent );
+	}
+	/*
 	function mousewheel( event ) {
 
 		if ( _this.enabled === false ) return;
@@ -613,6 +675,7 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 		_this.dispatchEvent( endEvent );
 
 	}
+	*/
 	/*
 	var now, delta;
 	var touch = {};
@@ -734,12 +797,12 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 
 	}
 */
-	this.domElement.addEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
+	// this.domElement.addEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
 
 	// this.domElement.addEventListener( 'mousedown', mousedown, false );
 
-	this.domElement.addEventListener( 'mousewheel', mousewheel, false );
-	this.domElement.addEventListener( 'DOMMouseScroll', mousewheel, false ); // firefox
+	// this.domElement.addEventListener( 'mousewheel', mousewheel, false );
+	// this.domElement.addEventListener( 'DOMMouseScroll', mousewheel, false ); // firefox
 
 	// this.domElement.addEventListener( 'touchstart', touchstart, false );
 	// this.domElement.addEventListener( 'touchend', touchend, false );
