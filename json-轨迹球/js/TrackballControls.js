@@ -438,17 +438,31 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 
 	}
 
-	touchEvent.start = function (event, eb,a,b) {
+	touchEvent.start = function (event, eb) {
 		switch(eb){
+            case -2:
+            	_state = STATE.TOUCH_ZOOM_PAN;
+			var dx = event[ 0 ].pageX - event[ 1 ].pageX;
+			var dy = event[ 0 ].pageY - event[ 1 ].pageY;
+			_touchZoomDistanceEnd = _touchZoomDistanceStart = Math.sqrt( dx * dx + dy * dy );
+
+			var x = ( event[ 0 ].pageX + event[ 1 ].pageX ) / 2;
+			var y = ( event[ 0 ].pageY + event[ 1 ].pageY ) / 2;
+			_panStart.copy( getMouseOnScreen( x, y ) );
+			_panEnd.copy( _panStart );
+            break;
             case -1:
+            	_state = STATE.TOUCH_ROTATE;
             case 1:
             	// log("L start");
+            	_state = _state === STATE.TOUCH_ROTATE ? _state : STATE.ROTATE;
             	if(!_this.noRotate){
             		_rotateStart.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
 				_rotateEnd.copy( _rotateStart );
             	}
             break;
             case 4:
+            	_state = STATE.ZOOM;
             // log("M start");
             	if (!_this.noZoom) {
             		_zoomStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
@@ -456,6 +470,7 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
             	}
             break;
             case 2:
+            	_state = STATE.PAN;
             // log("R start");
             if (!_this.noPan) {
             		_panStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
@@ -465,74 +480,13 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
             default:
             break;
         }
-        /*
-		if (event.button === undefined) {
-			_rotateStart.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
-			_rotateEnd.copy( _rotateStart );
-		}else{
-			if ( _state === STATE.NONE ) {
-
-				_state = event.button;
-
-			}
-			if ( _state === STATE.ROTATE && !_this.noRotate ) {
-
-				_rotateStart.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
-				_rotateEnd.copy( _rotateStart );
-
-			} else if ( _state === STATE.ZOOM && !_this.noZoom ) {
-
-				_zoomStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
-				_zoomEnd.copy(_zoomStart);
-
-			} else if ( _state === STATE.PAN && !_this.noPan ) {
-
-				_panStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
-				_panEnd.copy(_panStart)
-
-			}
-		}
-		*/
 		_this.dispatchEvent( startEvent );
 	}
-	/*
-	function mousedown( event ) {
-
-		if ( _this.enabled === false ) return;
-		_lastTouchDate = new Date().getTime();
-
-		event.preventDefault();
-		event.stopPropagation();
-
-		if ( _state === STATE.NONE ) {
-
-			_state = event.button;
-
-		}
-		if ( _state === STATE.ROTATE && !_this.noRotate ) {
-
-			_rotateStart.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
-			_rotateEnd.copy( _rotateStart );
-
-		} else if ( _state === STATE.ZOOM && !_this.noZoom ) {
-
-			_zoomStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
-			_zoomEnd.copy(_zoomStart);
-
-		} else if ( _state === STATE.PAN && !_this.noPan ) {
-
-			_panStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
-			_panEnd.copy(_panStart)
-
-		}
-
-		document.addEventListener( 'mousemove', mousemove, false );
-		document.addEventListener( 'mouseup', mouseup, false );
-
-		_this.dispatchEvent( startEvent );
-
+	touchEvent.end = function (event) {
+		_state = STATE.NONE;
+		_this.dispatchEvent( endEvent );
 	}
-*/
+
 	touchEvent.singleMove = function (event, eb) {
 		switch(eb){
             case -1:
@@ -557,62 +511,18 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
             default:
             break;
         }
-        /*
-		if (event.button === undefined){
-			_rotateEnd.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
-		}else{
-			if ( _state === STATE.ROTATE && !_this.noRotate ) {
-
-				_rotateEnd.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
-
-			} else if ( _state === STATE.ZOOM && !_this.noZoom ) {
-
-				_zoomEnd.copy( getMouseOnScreen( event.pageX, event.pageY ) );
-
-			} else if ( _state === STATE.PAN && !_this.noPan ) {
-
-				_panEnd.copy( getMouseOnScreen( event.pageX, event.pageY ) );
-
-			}
-		}
-		*/
 	}
-	/*
-	function mousemove( event ) {
 
-		if ( _this.enabled === false ) return;
-
-		event.preventDefault();
-		event.stopPropagation();
-		if ( _state === STATE.ROTATE && !_this.noRotate ) {
-
-			_rotateEnd.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
-
-		} else if ( _state === STATE.ZOOM && !_this.noZoom ) {
-
-			_zoomEnd.copy( getMouseOnScreen( event.pageX, event.pageY ) );
-
-		} else if ( _state === STATE.PAN && !_this.noPan ) {
-
-			_panEnd.copy( getMouseOnScreen( event.pageX, event.pageY ) );
-
-		}
-
-	}
-*/
-	touchEvent.doubleMove = function(e1, e2) {
-        var dx = e1.pageX - e2.pageX;
-		var dy = e1.pageY - e2.pageY;
+	touchEvent.doubleMove = function(event) {
+        var dx = event[ 0 ].pageX - event[ 1 ].pageX;
+		var dy = event[ 0 ].pageY - event[ 1 ].pageY;
 		_touchZoomDistanceEnd = Math.sqrt( dx * dx + dy * dy );
 
-		var x = ( e1.pageX + e2.pageX ) / 2;
-		var y = ( e1.pageY + e2.pageY ) / 2;
+		var x = ( event[ 0 ].pageX + event[ 1 ].pageX ) / 2;
+		var y = ( event[ 0 ].pageY + event[ 1 ].pageY ) / 2;
 		_panEnd.copy( getMouseOnScreen( x, y ) );
     }
-	touchEvent.end = function (event) {
-		_state = STATE.NONE;
-		_this.dispatchEvent( endEvent );
-	}
+
 	touchEvent.doubleTap = function(event, eb) {
 		switch(eb){
             case -1:
@@ -623,190 +533,11 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
             break;
         }
     }
-    /*
-	function mouseup( event ) {
-
-		if ( _this.enabled === false ) return;
-
-		event.preventDefault();
-		event.stopPropagation();
-		// console.log(_state);
-		if( new Date().getTime() - _lastTouchDate < 200 ){
-			var vrp = _this.getRaycasterPoint(event);
-			_this.setCamera(vrp);
-		}
-
-
-		_state = STATE.NONE;
-
-		document.removeEventListener( 'mousemove', mousemove );
-		document.removeEventListener( 'mouseup', mouseup );
-		_this.dispatchEvent( endEvent );
-
-	}
-	*/
 	touchEvent.wheel = function (event, delta) {
 		_zoomStart.y += delta * 0.01;
 		_this.dispatchEvent( startEvent );
 		_this.dispatchEvent( endEvent );
 	}
-	/*
-	function mousewheel( event ) {
-
-		if ( _this.enabled === false ) return;
-
-		event.preventDefault();
-		event.stopPropagation();
-
-		var delta = 0;
-
-		if ( event.wheelDelta ) { // WebKit / Opera / Explorer 9
-
-			delta = event.wheelDelta / 40;
-
-		} else if ( event.detail ) { // Firefox
-
-			delta = -event.detail / 3;
-
-		}
-
-		_zoomStart.y += delta * 0.01;
-		_this.dispatchEvent( startEvent );
-		_this.dispatchEvent( endEvent );
-
-	}
-	*/
-	/*
-	var now, delta;
-	var touch = {};
-	function touchstart( event ) {
-		event.preventDefault();
-		event.stopPropagation();
-		if ( _this.enabled === false ) return;
-		now = Date.now();
-		delta = now - (touch.last || now);
-		touch.x1 = event.touches[0].pageX;
-		touch.y1 = event.touches[0].pageY;
-		if (delta > 0 && delta <= 250) touch.isDoubleTap = true;
-		touch.last = now;
-		_lastTouchDate = new Date().getTime();
-		switch ( event.touches.length ) {
-			case 1:
-				_touchesLength = 1;
-				_state = STATE.TOUCH_ROTATE;
-				// lastTouch.x = event.changedTouches[0].pageX;
-				// lastTouch.y = event.changedTouches[0].pageY;
-				_rotateStart.copy( getMouseProjectionOnBall( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY ) );
-				_rotateEnd.copy( _rotateStart );
-				break;
-
-			case 2:
-				_touchesLength = 2;
-				_state = STATE.TOUCH_ZOOM_PAN;
-				var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
-				var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
-				_touchZoomDistanceEnd = _touchZoomDistanceStart = Math.sqrt( dx * dx + dy * dy );
-
-				var x = ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX ) / 2;
-				var y = ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY ) / 2;
-				_panStart.copy( getMouseOnScreen( x, y ) );
-				_panEnd.copy( _panStart );
-				break;
-
-			default:
-				_touchesLength = 0;
-				_state = STATE.NONE;
-
-		}
-		_this.dispatchEvent( startEvent );
-
-
-	}
-
-	function touchmove( event ) {
-
-		if ( _this.enabled === false ) return;
-
-		event.preventDefault();
-		event.stopPropagation();
-		// cancelLongTap();
-		touch.x2 = event.touches[0].pageX;
-		touch.y2 = event.touches[0].pageY;
-		if (event.touches.length > 1 || Math.abs(touch.x1 - touch.x2) > 10)
-			touch = {};
-		switch ( event.touches.length ) {
-			case 1:
-				lastTouch = Math.abs( event.touches[0].pageX - lastTouch ) < 10 ? lastTouch : 0;
-				if( _touchesLength == 1 )
-					_rotateEnd.copy( getMouseProjectionOnBall( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY ) );
-				break;
-
-			case 2:
-				if( _touchesLength == 2 ){
-					var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
-					var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
-					_touchZoomDistanceEnd = Math.sqrt( dx * dx + dy * dy );
-
-					var x = ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX ) / 2;
-					var y = ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY ) / 2;
-					_panEnd.copy( getMouseOnScreen( x, y ) );
-				}
-				break;
-
-			default:
-				_state = STATE.NONE;
-
-		}
-
-	}
-
-	function touchend( event ) {
-
-		if ( _this.enabled === false ) return;
-		if(_touchesLength == 1 && touch.isDoubleTap){
-			var vrp = _this.getRaycasterPoint(event);
-			_this.setCamera(vrp);
-			touch = {};
-		}else{
-
-			switch ( event.touches.length ) {
-
-				case 1:
-					_touchesLength = 1;
-					_rotateEnd.copy( getMouseProjectionOnBall( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY ) );
-					_rotateStart.copy( _rotateEnd );
-					break;
-
-				case 2:
-					_touchesLength = 2;
-					_touchZoomDistanceStart = _touchZoomDistanceEnd = 0;
-
-					var x = ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX ) / 2;
-					var y = ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY ) / 2;
-					_panEnd.copy( getMouseOnScreen( x, y ) );
-					_panStart.copy( _panEnd );
-					break;
-				default:
-					_touchesLength = 0;
-					break;
-
-			}
-		}
-		_state = STATE.NONE;
-		_this.dispatchEvent( endEvent );
-
-	}
-*/
-	// this.domElement.addEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
-
-	// this.domElement.addEventListener( 'mousedown', mousedown, false );
-
-	// this.domElement.addEventListener( 'mousewheel', mousewheel, false );
-	// this.domElement.addEventListener( 'DOMMouseScroll', mousewheel, false ); // firefox
-
-	// this.domElement.addEventListener( 'touchstart', touchstart, false );
-	// this.domElement.addEventListener( 'touchend', touchend, false );
-	// this.domElement.addEventListener( 'touchmove', touchmove, false );
 
 	window.addEventListener( 'keydown', keydown, false );
 	window.addEventListener( 'keyup', keyup, false );

@@ -66,7 +66,7 @@ var TouchEvent = function(object) {
         _lastTapTime = touchTimeout = tapTimeout = longTapTimeout = null;
     }
 
-    function startEvent(e, eb) {
+    function _startEvent(e, eb) {
         tapTime = Date.now();
         delta = tapTime - (_lastTapTime || tapTime);
         _state = STATE.TAP;
@@ -88,7 +88,7 @@ var TouchEvent = function(object) {
         }
     }
 
-    function endEvent(e, eb) {
+    function _endEvent(e, eb) {
         cancelLongTap();
         if (_lastTapTime) {
             // tapTimeout = setTimeout(function() {
@@ -114,7 +114,7 @@ var TouchEvent = function(object) {
         event.stopPropagation();
         // console.log("s",event.buttons);
         _lastButtons = event.buttons;
-        startEvent(event, _lastButtons);
+        _startEvent(event, _lastButtons);
         document.addEventListener('mousemove', mousemove, false);
         document.addEventListener('mouseup', mouseup, false);
     }
@@ -130,7 +130,7 @@ var TouchEvent = function(object) {
         event.preventDefault();
         event.stopPropagation();
         // _lastButtons = event.buttons;
-        endEvent(event, _lastButtons);
+        _endEvent(event, _lastButtons);
         document.removeEventListener('mousemove', mousemove);
         document.removeEventListener('mouseup', mouseup);
     }
@@ -147,8 +147,8 @@ var TouchEvent = function(object) {
         }
         _this.wheel(event, delta);
         // _zoomStart.y += delta * 0.01;
-        // _this.dispatchEvent(startEvent);
-        // _this.dispatchEvent(endEvent);
+        // _this.dispatchEvent(_startEvent);
+        // _this.dispatchEvent(_endEvent);
     }
 
     function touchstart(event) {
@@ -156,10 +156,11 @@ var TouchEvent = function(object) {
         event.stopPropagation();
         switch (event.touches.length) {
             case 1:
-                startEvent(event.touches[0], STATE.TOUCH_BTN);
+                _startEvent(event.touches[0], -1);
                 break;
             case 2:
                 cancelAll();
+                _this.start(event.touches, -2);
                 break;
             default:
                 cancelAll();
@@ -175,7 +176,7 @@ var TouchEvent = function(object) {
                 moveEvent(event.touches[0], STATE.TOUCH_BTN);
                 break;
             case 2:
-                _this.doubleMove(event.touches[0], event.touches[1]);
+                _this.doubleMove(event.touches);
                 break;
             default:
                 break;
@@ -187,7 +188,7 @@ var TouchEvent = function(object) {
         event.stopPropagation();
         switch (event.touches.length) {
             case 0:
-                endEvent(event.changedTouches[0], STATE.TOUCH_BTN);
+                _endEvent(event.changedTouches[0], STATE.TOUCH_BTN);
                 break;
             case 1:
                 _state = STATE.NONE;
