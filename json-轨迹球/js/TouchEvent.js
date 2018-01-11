@@ -12,11 +12,11 @@ var TouchEvent = function(object) {
         MIDDLE_BTN: 1,
         RIGHT_BTN: 2
     };
-    var _lastButtons = null;
+    var _ctrlPtType = null;
     var _state = STATE.NONE;
-    var tapTime, _lastTapTime, delta;
+    var _lastTapTime;
     var tapTimeout, touchTimeout, longTapTimeout;
-    var longTapDelay = 750;
+    var longTapDelay = 1500;
     this.start = function(e, _s, S) {
         console.log("start");
     }
@@ -45,7 +45,7 @@ var TouchEvent = function(object) {
     function longTap() {
         longTapTimeout = null;
         if (_state === STATE.TAP) {
-            _this.longTap(_lastButtons);
+            _this.longTap(_ctrlPtType);
         }
         _state = STATE.NONE;
         _lastTapTime = null;
@@ -65,30 +65,40 @@ var TouchEvent = function(object) {
         if (longTapTimeout) clearTimeout(longTapTimeout);
         _lastTapTime = touchTimeout = tapTimeout = longTapTimeout = null;
     }
-
-    function _startEvent(e, eb) {
-        tapTime = Date.now();
-        delta = tapTime - (_lastTapTime || tapTime);
+    /**
+     * 一个控制点按下时事件，判断单双击及长按事件
+     * @param  {[array]} axis          [description]
+     * @param  {[Number]} ctrlPtType [description]
+     * @return {[type]}            [description]
+     */
+    function _oneCtrlPtStart(axis) {
+        var tapTime = Date.now();
+        var delta = tapTime - (_lastTapTime || tapTime);
         _state = STATE.TAP;
         if (delta > 0 && delta <= 250) {
+            // 250ms 内再次点击则执行双击任务（控制点离开时），并取消单击定时任务
             _state = STATE.DTAP;
             clearTimeout(touchTimeout);
         } else {
+            // 单击时创建长按事件的定时任务
+            // 如果 longTapDelay 内没有终止 longTapTimeout，执行长按事件
             longTapTimeout = setTimeout(longTap, longTapDelay);
         }
         _lastTapTime = tapTime;
-        _this.start(e, eb, _state, STATE);
+        // 调用对外接口
+        _this.start(axis, _ctrlPtType);
     }
 
-    function moveEvent(e, eb) {
+    function _ctrlPtMove(axis) {
         // if(Math.abs( e.pageX - lastMove ) < 10) return;
         if (_state === STATE.TAP) {
             cancelAll();
-            _this.singleMove(e, eb);
+            // 调用对外接口
+            _this.singleMove(axis, _ctrlPtType);
         }
     }
 
-    function _endEvent(e, eb) {
+    function _ctrlPtEnd(axis) {
         cancelLongTap();
         if (_lastTapTime) {
             // tapTimeout = setTimeout(function() {
@@ -96,25 +106,28 @@ var TouchEvent = function(object) {
                 // cancelAll();
                 clearTimeout(touchTimeout);
                 _lastTapTime = null;
-                _this.doubleTap(e, eb);
+                _this.doubleTap(axis, _ctrlPtType);
             } else if (_state === STATE.TAP) {
                 touchTimeout = setTimeout(function() {
                     _lastTapTime = touchTimeout = null;
-                    _this.singleTap(e, eb);
+                    _this.singleTap(axis, _ctrlPtType);
                 }, 250)
             }
             _state = STATE.NONE;
             // }, 0)
         }
-        _this.end(e, eb, _state, STATE);
+        _this.end(axis);
     }
 
     function mousedown(event) {
         event.preventDefault();
         event.stopPropagation();
         // console.log("s",event.buttons);
-        _lastButtons = event.buttons;
-        _startEvent(event, _lastButtons);
+        _ctrlPtType = event.buttons;
+        _oneCtrlPtStart([{
+            pageX: event.pageX,
+            pageY: event.pageY
+        }]);
         document.addEventListener('mousemove', mousemove, false);
         document.addEventListener('mouseup', mouseup, false);
     }
@@ -123,20 +136,21 @@ var TouchEvent = function(object) {
         event.preventDefault();
         event.stopPropagation();
         // console.log("s",event.buttons);
-        moveEvent(event, _lastButtons);
+        _ctrlPtMove([{
+            pageX: event.pageX,
+            pageY: event.pageY
+        }]);
     }
 
     function mouseup(event) {
         event.preventDefault();
         event.stopPropagation();
-        // _lastButtons = event.buttons;
-        _endEvent(event, _lastButtons);
+        _ctrlPtEnd(event);
         document.removeEventListener('mousemove', mousemove);
         document.removeEventListener('mouseup', mouseup);
     }
 
     function mousewheel(event) {
-        // if (_this.enabled === false) return;
         event.preventDefault();
         event.stopPropagation();
         var delta = 0;
@@ -146,9 +160,6 @@ var TouchEvent = function(object) {
             delta = -event.detail;
         }
         _this.wheel(event, delta);
-        // _zoomStart.y += delta * 0.01;
-        // _this.dispatchEvent(_startEvent);
-        // _this.dispatchEvent(_endEvent);
     }
 
     function touchstart(event) {
@@ -156,11 +167,13 @@ var TouchEvent = function(object) {
         event.stopPropagation();
         switch (event.touches.length) {
             case 1:
-                _startEvent(event.touches[0], -1);
+                _ctrlPtType = -1;
+                _oneCtrlPtStart(event.touches, -1);
                 break;
             case 2:
                 cancelAll();
-                _this.start(event.touches, -2);
+                _ctrlPtType = -2;
+                _this.start(event.touches, _ctrlPtType);
                 break;
             default:
                 cancelAll();
@@ -173,7 +186,7 @@ var TouchEvent = function(object) {
         if (_state === STATE.NONE) return;
         switch (event.touches.length) {
             case 1:
-                moveEvent(event.touches[0], STATE.TOUCH_BTN);
+                _ctrlPtMove(event.touches);
                 break;
             case 2:
                 _this.doubleMove(event.touches);
@@ -188,10 +201,7 @@ var TouchEvent = function(object) {
         event.stopPropagation();
         switch (event.touches.length) {
             case 0:
-                _endEvent(event.changedTouches[0], STATE.TOUCH_BTN);
-                break;
-            case 1:
-                _state = STATE.NONE;
+                _ctrlPtEnd(event.changedTouches);
                 break;
             default:
                 _state = STATE.NONE;

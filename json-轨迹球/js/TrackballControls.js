@@ -371,8 +371,8 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 		// var touches = event.changedTouches;
 		// var x = touches ? touches[0].pageX : event.clientX ,
 		// 	y = touches ? touches[0].pageY : event.clientY ;
-		var x = event.pageX,
-			y = event.pageY;
+		var x = event[ 0 ].pageX,
+			y = event[ 0 ].pageY;
         var mouse = new THREE.Vector2();
 	        mouse.x = ( x / window.innerWidth ) * 2 - 1;
 	        mouse.y = - ( y / window.innerHeight ) * 2 + 1;
@@ -457,7 +457,7 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
             	// log("L start");
             	_state = _state === STATE.TOUCH_ROTATE ? _state : STATE.ROTATE;
             	if(!_this.noRotate){
-            		_rotateStart.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
+            		_rotateStart.copy( getMouseProjectionOnBall( event[ 0 ].pageX, event[ 0 ].pageY ) );
 				_rotateEnd.copy( _rotateStart );
             	}
             break;
@@ -465,7 +465,7 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
             	_state = STATE.ZOOM;
             // log("M start");
             	if (!_this.noZoom) {
-            		_zoomStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
+            		_zoomStart.copy( getMouseOnScreen( event[ 0 ].pageX, event[ 0 ].pageY ) );
 				_zoomEnd.copy(_zoomStart);
             	}
             break;
@@ -473,7 +473,7 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
             	_state = STATE.PAN;
             // log("R start");
             if (!_this.noPan) {
-            		_panStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
+            		_panStart.copy( getMouseOnScreen( event[ 0 ].pageX, event[ 0 ].pageY ) );
 				_panEnd.copy(_panStart)
             	}
             break;
@@ -491,21 +491,20 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 		switch(eb){
             case -1:
             case 1:
-            // log("L singleMove");
             	if(!_this.noRotate){
-            		_rotateEnd.copy( getMouseProjectionOnBall( event.pageX, event.pageY ) );
+            		_rotateEnd.copy( getMouseProjectionOnBall( event[ 0 ].pageX, event[ 0 ].pageY ) );
             	}
             break;
             case 4:
             // log("M singleMove");
             	if(!_this.noZoom){
-            		_zoomEnd.copy( getMouseOnScreen( event.pageX, event.pageY ) );
+            		_zoomEnd.copy( getMouseOnScreen( event[ 0 ].pageX, event[ 0 ].pageY ) );
             	}
             break;
             case 2:
             // log("R singleMove");
             	if(!_this.noPan){
-            		_panEnd.copy( getMouseOnScreen( event.pageX, event.pageY ) );
+            		_panEnd.copy( getMouseOnScreen( event[ 0 ].pageX, event[ 0 ].pageY ) );
             	}
             break;
             default:

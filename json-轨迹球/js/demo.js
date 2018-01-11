@@ -6,7 +6,7 @@ var camera, controls, scene, renderer;
 //     flatMaterial,
 //     gouraudMaterial,
 //     phongMaterial;
-
+var log = new Console(document.getElementById('console'));
 init();
 animate();
 
