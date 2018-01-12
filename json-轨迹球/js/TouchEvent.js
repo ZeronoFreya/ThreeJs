@@ -104,6 +104,7 @@ var TouchEvent = function(object) {
             // tapTimeout = setTimeout(function() {
             if (_state === STATE.DTAP) {
                 // cancelAll();
+                console.log(3);
                 clearTimeout(touchTimeout);
                 _lastTapTime = null;
                 _this.doubleTap(axis, _ctrlPtType);
@@ -145,7 +146,10 @@ var TouchEvent = function(object) {
     function mouseup(event) {
         event.preventDefault();
         event.stopPropagation();
-        _ctrlPtEnd(event);
+        _ctrlPtEnd([{
+            pageX: event.pageX,
+            pageY: event.pageY
+        }]);
         document.removeEventListener('mousemove', mousemove);
         document.removeEventListener('mouseup', mouseup);
     }
