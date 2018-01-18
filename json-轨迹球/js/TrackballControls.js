@@ -133,7 +133,24 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 		};
 
 	}() );
+/*
+	var getMouseOnCircle = ( function () {
 
+		var vector = new THREE.Vector2();
+
+		return function ( pageX, pageY ) {
+
+			vector.set(
+				( ( pageX - _this.screen.width * 0.5 - _this.screen.left ) / ( _this.screen.width * 0.5 ) ),
+				( ( _this.screen.height + 2 * ( _this.screen.top - pageY ) ) / _this.screen.width ) // screen.width intentional
+			);
+
+			return vector;
+
+		};
+
+	}() );
+*/
 	var getMouseProjectionOnBall = ( function () {
 
 		var vector = new THREE.Vector3();
@@ -147,9 +164,9 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 				( _this.screen.height * 0.5 + _this.screen.top - pageY ) / (_this.screen.height*.5),
 				0.0
 			);
-
+			console.log(mouseOnBall);
 			var length = mouseOnBall.length();
-
+			console.log(length);
 			if ( _this.noRoll ) {
 
 				if ( length < Math.SQRT1_2 ) {
@@ -223,6 +240,67 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 
 	}());
 
+/*
+	_movePrev = new THREE.Vector2(),
+	_moveCurr = new THREE.Vector2(),
+
+	_lastAxis = new THREE.Vector3(),
+	_lastAngle = 0,
+	this.rotateCamera = ( function() {
+
+		var axis = new THREE.Vector3(),
+			quaternion = new THREE.Quaternion(),
+			eyeDirection = new THREE.Vector3(),
+			objectUpDirection = new THREE.Vector3(),
+			objectSidewaysDirection = new THREE.Vector3(),
+			moveDirection = new THREE.Vector3(),
+			angle;
+
+		return function rotateCamera() {
+
+			moveDirection.set( _moveCurr.x - _movePrev.x, _moveCurr.y - _movePrev.y, 0 );
+			angle = moveDirection.length();
+
+			if ( angle ) {
+
+				_eye.copy( _this.object.position ).sub( _this.target );
+
+				eyeDirection.copy( _eye ).normalize();
+				objectUpDirection.copy( _this.object.up ).normalize();
+				objectSidewaysDirection.crossVectors( objectUpDirection, eyeDirection ).normalize();
+
+				objectUpDirection.setLength( _moveCurr.y - _movePrev.y );
+				objectSidewaysDirection.setLength( _moveCurr.x - _movePrev.x );
+
+				moveDirection.copy( objectUpDirection.add( objectSidewaysDirection ) );
+
+				axis.crossVectors( moveDirection, _eye ).normalize();
+
+				angle *= _this.rotateSpeed;
+				quaternion.setFromAxisAngle( axis, angle );
+
+				_eye.applyQuaternion( quaternion );
+				_this.object.up.applyQuaternion( quaternion );
+
+				_lastAxis.copy( axis );
+				_lastAngle = angle;
+
+			} else if ( ! _this.staticMoving && _lastAngle ) {
+
+				_lastAngle *= Math.sqrt( 1.0 - _this.dynamicDampingFactor );
+				_eye.copy( _this.object.position ).sub( _this.target );
+				quaternion.setFromAxisAngle( _lastAxis, _lastAngle );
+				_eye.applyQuaternion( quaternion );
+				_this.object.up.applyQuaternion( quaternion );
+
+			}
+
+			_movePrev.copy( _moveCurr );
+
+		};
+
+	}() );
+*/
 	this.zoomCamera = function () {
 
 		if ( _state === STATE.TOUCH_ZOOM_PAN ) {
