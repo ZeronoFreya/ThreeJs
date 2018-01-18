@@ -24,7 +24,7 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 	this.noRotate = false;
 	this.noZoom = false;
 	this.noPan = false;
-	this.noRoll = false;
+	this.noRoll = true;
 
 
 	this.staticMoving = false;
@@ -164,31 +164,29 @@ THREE.TrackballControls = function ( object, touchEvent, domElement ) {
 				( _this.screen.height * 0.5 + _this.screen.top - pageY ) / (_this.screen.height*.5),
 				0.0
 			);
-			console.log(mouseOnBall);
 			var length = mouseOnBall.length();
-			console.log(length);
 			if ( _this.noRoll ) {
 
 				if ( length < Math.SQRT1_2 ) {
-
-					mouseOnBall.z = Math.sqrt( 1.0 - length*length );
-
+					if ( pageX/_this.screen.width < 0.9 ) {
+						mouseOnBall.z = Math.sqrt( 1.0 - length*length );
+					}else{
+						mouseOnBall.normalize();
+					}
 				} else {
-
-					mouseOnBall.z = .5 / length;
-
+					if ( pageX/_this.screen.width < 0.9 ) {
+						mouseOnBall.z = .5 / length;
+					}else{
+						mouseOnBall.normalize();
+					}
 				}
 
 			} else if ( length > 1.0 ) {
-
 				mouseOnBall.normalize();
-
+				// console.log(mouseOnBall);
 			} else {
-
 				mouseOnBall.z = Math.sqrt( 1.0 - length * length );
-
 			}
-
 			_eye.copy( _this.object.position ).sub( _this.target );
 
 			vector.copy( _this.object.up ).setLength( mouseOnBall.y )
