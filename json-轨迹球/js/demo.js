@@ -6,7 +6,10 @@ var camera, controls, scene, renderer;
 //     flatMaterial,
 //     gouraudMaterial,
 //     phongMaterial;
+
 var log = new Console(document.getElementById('console'));
+var effectController;
+var gui;
 init();
 animate();
 
@@ -72,7 +75,201 @@ function loadModels( filePath, material ){
         objects.push(mesh);
     })
 }
+function launchFullScreen(element) {
+    if (element.requestFullscreen) {
+        element.requestFullscreen();
+    } else if (element.mozRequestFullScreen) {
+        element.mozRequestFullScreen();
+    } else if (element.webkitRequestFullscreen) {
+        element.webkitRequestFullscreen();
+    } else if (element.msRequestFullscreen) {
+        element.msRequestFullscreen();
+    }
+}
 
+function exitFullscreen() {
+    if (document.exitFullscreen) {
+        document.exitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+    } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+    }
+    // fullscreen.innerHTML = "全屏";
+}
+function toggleFullscreen(){
+    if (effectController.fullScreen) {
+        launchFullScreen( document.documentElement );
+        return;
+    }
+    exitFullscreen();
+}
+
+function testGui(){
+    console.log('testGui');
+}
+function rim(){
+    var mtl = new THREE.PhongNodeMaterial();
+
+    var intensity = 1.3;
+    var power = new THREE.FloatNode( 3 );
+    var color = new THREE.ColorNode( 0xFFFFFF );
+
+    var viewZ = new THREE.Math2Node(
+        new THREE.NormalNode( THREE.NormalNode.VIEW ),
+        new THREE.Vector3Node( 0, 0, - intensity ),
+        THREE.Math2Node.DOT
+    );
+
+    var rim = new THREE.OperatorNode(
+        viewZ,
+        new THREE.FloatNode( intensity ),
+        THREE.OperatorNode.ADD
+    );
+
+    var rimPower = new THREE.Math2Node(
+        rim,
+        power,
+        THREE.Math2Node.POW
+    );
+
+    var rimColor = new THREE.OperatorNode(
+        rimPower,
+        color,
+        THREE.OperatorNode.MUL
+    );
+
+    mtl.color = new THREE.ColorNode( 0x111111 );
+    mtl.emissive = rimColor;
+
+    return mtl;
+}
+function toon(){
+    var mtl = new THREE.PhongNodeMaterial();
+
+    var count = new THREE.FloatNode( 2.8 );
+    var sceneDirectLight = new THREE.LightNode();
+    var color = new THREE.ColorNode( 0xf8eaec );
+
+    var lineColor = new THREE.ColorNode( 0x6b0602 );
+    var lineSize = new THREE.FloatNode( 0 );
+    var lineInner = new THREE.FloatNode( 0 );
+
+    // CEL
+
+    var lightLuminance = new THREE.LuminanceNode( sceneDirectLight );
+
+    var preCelLight = new THREE.OperatorNode(
+        lightLuminance,
+        count,
+        THREE.OperatorNode.MUL
+    );
+
+    var celLight = new THREE.Math1Node(
+        preCelLight,
+        THREE.Math1Node.CEIL
+    );
+
+    var posCelLight = new THREE.OperatorNode(
+        celLight,
+        count,
+        THREE.OperatorNode.DIV
+    );
+
+    // LINE
+
+    var posDirection = new THREE.Math1Node( new THREE.PositionNode( THREE.PositionNode.VIEW ), THREE.Math1Node.NORMALIZE );
+    var norDirection = new THREE.Math1Node( new THREE.NormalNode( THREE.NormalNode.VIEW ), THREE.Math1Node.NORMALIZE );
+
+    var viewZ = new THREE.Math2Node(
+        posDirection,
+        norDirection,
+        THREE.Math2Node.DOT
+    );
+
+    var lineOutside = new THREE.Math1Node(
+        viewZ,
+        THREE.Math1Node.ABS
+    );
+
+    var line = new THREE.OperatorNode(
+        lineOutside,
+        new THREE.FloatNode( 1 ),
+        THREE.OperatorNode.DIV
+    );
+
+    var lineScaled = new THREE.Math3Node(
+        line,
+        lineSize,
+        lineInner,
+        THREE.Math3Node.SMOOTHSTEP
+    );
+
+    var innerContour = new THREE.Math1Node( new THREE.Math1Node( lineScaled, THREE.Math1Node.SAT ), THREE.Math1Node.INVERT );
+
+    // APPLY
+
+    mtl.color = color;
+    mtl.light = posCelLight;
+    mtl.shininess = new THREE.FloatNode( 0 );
+
+    mtl.environment = lineColor;
+    mtl.environmentAlpha = innerContour;
+    return mtl;
+}
+
+function updateMaterial(){
+    var mesh = objects[0];
+    if ( mesh.material ) mesh.material.dispose();
+    var mtl;
+    switch ( effectController.material ) {
+        case 'rim':
+            mtl = rim();
+        break;
+        case 'toon':
+            mtl = toon();
+        break;
+        case 'skin':
+            mtl = skin('skin');
+        break;
+    }
+
+    // build shader
+    mtl.build();
+    // set material
+    mesh.material = mtl;
+    objects[1].material = mtl;
+}
+
+function setupGui() {
+    // https://github.com/dataarts/dat.gui/blob/master/API.md
+    effectController = {
+        button: testGui,
+        color: '#ffffff',
+        fullScreen: false,
+        material:'rim',
+        slider: 40
+    }
+    var h;
+    gui = new dat.GUI();
+    // 创建二级菜单
+    h = gui.addFolder( "Menu" );
+    // 添加 Slider
+    h.add( effectController, "slider", 1, 100 )
+        .step( 2 )
+        .name( "slider" )
+        .onChange( testGui );
+    // 添加 CheckBox
+    gui.add( effectController, "fullScreen" )
+        .onChange( toggleFullscreen );
+    // 添加 Select
+    gui.add( effectController, "material", [ "rim", "toon", "skin" ] )
+        .name( "Material" )
+        .onFinishChange( updateMaterial );
+    // 添加 Button
+    gui.add( effectController, 'button' );
+    gui.addColor( effectController, 'color' ).onChange(testGui);
+}
 function init() {
     container = document.getElementById('viewport');
 
@@ -100,6 +297,7 @@ function init() {
     loadModels( 'obj/body.json', material );
     loadModels( 'obj/eyes.json', material );
 
+    setupGui();
     // 渲染
     renderer = new THREE.WebGLRenderer({
         antialias: false,    // 抗锯齿
