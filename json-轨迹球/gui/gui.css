@@ -23,18 +23,26 @@ ul {
   height: 0;
   z-index: 0;
 }
-
+.bg{
+  background: #1a1a1a;
+}
+.bg2{
+  background: #000;
+}
 .dg.contain {
-  width: 260px;
+  width: auto;
   height: auto;
   position: absolute;
   top: 0;
   left: 0;
-  background: #1a1a1a;
+  /* background: #1a1a1a; */
 }
-
-.dg.main {
-  width: 100%;
+.dg.main{
+  width:0;
+  overflow: hidden;
+}
+.dg.main.open {
+  width: 260px;
   height: auto;
   min-height: 100px;
 }
@@ -43,27 +51,39 @@ ul {
   position: absolute;
   top: 0;
   right: 0;
-  height: 100px;
+  height: 30px;
   width: 30px;
-  background: #111;
   transform: translate(100%, 0);
 }
 
-.folder>ul {
+/* .folder {
+  border-left: 4px solid transparent;
+} */
+
+.folder>.caption {
+  padding: 0 5px;
+  height: 30px;
+  vertical-align: middle;
+  line-height: 30px;
+}
+.folder.open>ul {
   overflow: hidden;
   height: auto;
-  padding-left: 5px;
+  padding-left: 3px;
 }
 
-.folder>ul.close {
+.folder>ul {
   height: 0;
+  overflow: hidden;
+  padding-left: 3px;
 }
 
 .ctrl-group {
   display: table;
   width: 100%;
-  height: 100%;
+  height: 30px;
   padding: 5px;
+  border-bottom: 1px #2C2C2C solid;
 }
 
 .ctrl-group label {
@@ -83,7 +103,7 @@ ul {
   display: table;
 }
 
-.ctrl-group .slider:hover {
+.ctrl-group .slider-bar:hover {
   background: #3c3c3c;
 }
 
@@ -124,4 +144,16 @@ ul {
 
 .ctrl-group input:hover {
   background: #3c3c3c;
+}
+.boolean{
+  border-left: 3px solid #806787;
+}
+.string{
+  border-left: 3px solid #1ed36f;
+}
+.number{
+  border-left: 3px solid #2fa1d6;
+}
+.function{
+  border-left: 3px solid #e61d5f;
 }
