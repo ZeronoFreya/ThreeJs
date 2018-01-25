@@ -119,7 +119,6 @@ function init() {
 
   // 加载模型
   // loadModels( 'obj/body.json', material );
-  // loadModels( 'obj/eyes.json', material );
   loadModels([{
     file: 'obj/body.json',
     mtl: material,
