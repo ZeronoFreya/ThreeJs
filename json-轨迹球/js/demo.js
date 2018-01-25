@@ -91,7 +91,9 @@ function setupGui() {
   // 添加 Select
   gui.add(effectController, "material", ["wire", "flat", "gouraud", "phong", "basicRim", "advToon"])
     .name("Material")
-    .onFinishChange(updateMaterial);
+    .onFinishChange(function(){
+      updateMaterial( objects );
+    });
 }
 
 function init() {
@@ -118,7 +120,6 @@ function init() {
   var material = materials["phong"]();
 
   // 加载模型
-  // loadModels( 'obj/body.json', material );
   loadModels([{
     file: 'obj/body.json',
     mtl: material,
@@ -147,7 +148,6 @@ function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  // controls.handleResize();
 }
 
 function animate() {

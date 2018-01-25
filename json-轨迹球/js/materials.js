@@ -85,14 +85,14 @@ var materials = {
     }
 }
 
-function updateMaterial() {
-  var mesh = objects[0];
-  if (mesh.material) mesh.material.dispose();
-  var mtl;
-
-  var material = materials[effectController.material];
+function updateMaterial(meshs) {
+  let material = materials[effectController.material];
+  let mtl;
   if (material) mtl = material();
   else return;
-  // set material
-  mesh.material = mtl;
+  for (let i = 0; i < meshs.length; i++) {
+    mesh = meshs[i];
+    if (mesh.material) mesh.material.dispose();
+    mesh.material = mtl;
+  }
 }
