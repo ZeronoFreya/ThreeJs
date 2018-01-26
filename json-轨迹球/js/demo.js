@@ -36,16 +36,6 @@ function addLight() {
   camera.add(dirLight.target);
 }
 
-// function loadModels( filePath, material ){
-//     var loader = new THREE.JSONLoader();
-//     loader.load(filePath, function(geometry) {
-//         var mesh = new THREE.Mesh(geometry, material);
-//         mesh.castShadow = true;
-//         mesh.receiveShadow = true;
-//         scene.add(mesh);
-//         objects.push(mesh);
-//     })
-// }
 function loadModels(data) {
   let loader, mesh;
   for (let i = 0; i < data.length; i++) {
@@ -54,8 +44,8 @@ function loadModels(data) {
         loader = new THREE.JSONLoader();
         loader.load(data[i]['file'], function(geometry) {
           mesh = new THREE.Mesh(geometry, data[i]['mtl']);
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
+          // mesh.castShadow = true;
+          // mesh.receiveShadow = true;
           scene.add(mesh);
           objects.push(mesh);
         })
@@ -75,7 +65,7 @@ function setupGui() {
       fullscreen.toggleFullscreen();
       gui.close();
     },
-    material: 'phong'
+    material: 'advToon'
   }
   // var h;
   gui = new dat.GUI();
@@ -115,9 +105,9 @@ function init() {
 
   // 灯光
   addLight();
-
+  setupGui();
   // 材质
-  var material = materials["phong"]();
+  var material = materials[effectController.material]();
 
   // 加载模型
   loadModels([{
@@ -129,7 +119,7 @@ function init() {
     mtl: material,
     fltp: 'json'
   }]);
-  setupGui();
+
   // 渲染
   renderer = new THREE.WebGLRenderer({
     antialias: false, // 抗锯齿
